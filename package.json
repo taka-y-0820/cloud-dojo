@@ -1,0 +1,59 @@
+{
+  "name": "cloud-dojo",
+  "version": "0.1.0",
+  "description": "DevOps/Infrastructure Learning Platform with AI-powered explanations",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend/api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:api\"",
+    "dev:frontend": "pnpm --filter cloud-dojo-frontend dev",
+    "dev:api": "pnpm --filter cloud-dojo-api dev",
+    "dev:worker": "cd backend/worker && go run cmd/server/main.go",
+    "build": "pnpm run build:frontend && pnpm run build:api && pnpm run build:worker",
+    "build:frontend": "pnpm --filter cloud-dojo-frontend build",
+    "build:api": "pnpm --filter cloud-dojo-api build",
+    "build:worker": "cd backend/worker && go build -o bin/worker cmd/server/main.go",
+    "test": "pnpm run test:frontend && pnpm run test:api && pnpm run test:worker",
+    "test:frontend": "pnpm --filter cloud-dojo-frontend test",
+    "test:api": "pnpm --filter cloud-dojo-api test",
+    "test:worker": "cd backend/worker && go test ./...",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "db:migrate": "pnpm --filter cloud-dojo-api prisma:migrate",
+    "db:studio": "pnpm --filter cloud-dojo-api prisma:studio",
+    "lint": "pnpm run lint:frontend && pnpm run lint:api",
+    "lint:frontend": "pnpm --filter cloud-dojo-frontend lint",
+    "lint:api": "pnpm --filter cloud-dojo-api lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cloud-dojo.git"
+  },
+  "keywords": [
+    "devops",
+    "learning",
+    "docker",
+    "kubernetes",
+    "ci-cd",
+    "infrastructure",
+    "ai",
+    "education"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
