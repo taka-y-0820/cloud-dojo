@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { GraduationCap, Trophy, Target, Book, CheckCircle2, Lock, Play, Star } from 'lucide-react';
+import { PageLayout } from '@/layouts/PageLayout';
+import { PageHeader } from '@/layouts/PageHeader';
 
 const courses = [
   {
@@ -73,24 +75,31 @@ const achievements = [
 
 export function LearningPath() {
   return (
-    <div className="space-y-6">
+    <PageLayout>
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-          Learning Path
-        </h1>
-        <p className="text-muted-foreground">Your personalized DevOps learning journey</p>
-      </motion.div>
+      <PageHeader
+        title="Learning Path"
+        description="Your personalized DevOps learning journey"
+        Icon={GraduationCap}
+        bgColor="bg-gradient-to-br from-green-500 to-emerald-500"
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Courses Started', value: '3', icon: Book, color: 'from-blue-500 to-cyan-500' },
-          { label: 'Lessons Completed', value: '19', icon: CheckCircle2, color: 'from-green-500 to-emerald-500' },
-          { label: 'Achievements', value: '2/4', icon: Trophy, color: 'from-yellow-500 to-orange-500' },
+          {
+            label: 'Lessons Completed',
+            value: '19',
+            icon: CheckCircle2,
+            color: 'from-green-500 to-emerald-500',
+          },
+          {
+            label: 'Achievements',
+            value: '2/4',
+            icon: Trophy,
+            color: 'from-yellow-500 to-orange-500',
+          },
           { label: 'Study Time', value: '24h', icon: Target, color: 'from-purple-500 to-pink-500' },
         ].map((stat, index) => (
           <motion.div
@@ -98,9 +107,12 @@ export function LearningPath() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="border rounded-xl p-4 bg-card hover:shadow-lg transition-shadow"
+            className="border rounded-2xl p-8 bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300"
+            whileHover={{ y: -8 }}
           >
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} bg-opacity-10 flex items-center justify-center mb-3`}>
+            <div
+              className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} bg-opacity-10 flex items-center justify-center mb-3`}
+            >
               <stat.icon className="w-5 h-5" />
             </div>
             <div className="text-2xl font-bold mb-1">{stat.value}</div>
@@ -117,7 +129,6 @@ export function LearningPath() {
         className="space-y-4"
       >
         <div className="flex items-center gap-2 mb-4">
-          <GraduationCap className="w-6 h-6 text-primary" />
           <h2 className="text-2xl font-bold">Your Courses</h2>
         </div>
 
@@ -139,7 +150,9 @@ export function LearningPath() {
               )}
 
               <div className="flex items-start gap-6">
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${course.color} flex items-center justify-center text-3xl flex-shrink-0`}>
+                <div
+                  className={`w-16 h-16 rounded-xl bg-gradient-to-br ${course.color} flex items-center justify-center text-3xl flex-shrink-0`}
+                >
                   {course.unlocked ? '📚' : '🔒'}
                 </div>
 
@@ -163,13 +176,15 @@ export function LearningPath() {
                       {course.lessons} lessons
                     </span>
                     <span>{course.duration}</span>
-                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                      course.level === 'Beginner'
-                        ? 'bg-green-500/10 text-green-600'
-                        : course.level === 'Intermediate'
-                        ? 'bg-blue-500/10 text-blue-600'
-                        : 'bg-purple-500/10 text-purple-600'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-md text-xs font-medium ${
+                        course.level === 'Beginner'
+                          ? 'bg-green-500/10 text-green-600'
+                          : course.level === 'Intermediate'
+                            ? 'bg-blue-500/10 text-blue-600'
+                            : 'bg-purple-500/10 text-purple-600'
+                      }`}
+                    >
                       {course.level}
                     </span>
                   </div>
@@ -204,7 +219,8 @@ export function LearningPath() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="border rounded-2xl p-6 bg-card"
+        className="border rounded-2xl p-8 bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300"
+        whileHover={{ y: -8 }}
       >
         <div className="flex items-center gap-2 mb-6">
           <Trophy className="w-6 h-6 text-primary" />
@@ -240,6 +256,6 @@ export function LearningPath() {
           ))}
         </div>
       </motion.div>
-    </div>
+    </PageLayout>
   );
 }

@@ -1,11 +1,44 @@
 import { Queue, Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 
+let redisAvailable = false;
+
 const connection = new IORedis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   maxRetriesPerRequest: null,
+  retryStrategy: () => null, // Don't retry on connection failure
+  lazyConnect: true, // Don't connect immediately
+  enableOfflineQueue: false, // Don't queue commands when offline
+  connectTimeout: 3000, // 3 second timeout
 });
+
+// Handle connection errors gracefully - suppress error output
+connection.on('error', () => {
+  // Silently ignore Redis errors
+  redisAvailable = false;
+});
+
+connection.on('connect', () => {
+  console.log('✅ Redis connected - worker queues enabled');
+  redisAvailable = true;
+});
+
+// Test Redis connection
+export async function testRedisConnection(): Promise<boolean> {
+  try {
+    await connection.connect();
+    redisAvailable = true;
+    return true;
+  } catch (err) {
+    redisAvailable = false;
+    return false;
+  }
+}
+
+export function isRedisAvailable(): boolean {
+  return redisAvailable;
+}
 
 export interface DockerBuildTask {
   dockerfile: string;
@@ -60,7 +93,7 @@ export async function addDockerBuildTask(task: DockerBuildTask) {
       delay: 2000,
     },
     removeOnComplete: 100, // Keep last 100 completed jobs
-    removeOnFail: 1000,    // Keep last 1000 failed jobs
+    removeOnFail: 1000, // Keep last 1000 failed jobs
   });
   return job.id;
 }
@@ -123,7 +156,7 @@ export async function addCICDRunTask(task: CICDRunTask) {
 // Get job status
 export async function getJobStatus(queueName: string, jobId: string) {
   let queue: Queue;
-  
+
   switch (queueName) {
     case 'docker-build':
       queue = dockerBuildQueue;
@@ -143,17 +176,17 @@ export async function getJobStatus(queueName: string, jobId: string) {
     default:
       throw new Error(`Unknown queue: ${queueName}`);
   }
-  
+
   const job = await queue.getJob(jobId);
   if (!job) {
     return null;
   }
-  
+
   const state = await job.getState();
   const progress = job.progress;
   const returnValue = job.returnvalue;
   const failedReason = job.failedReason;
-  
+
   return {
     id: job.id,
     state,
@@ -170,7 +203,7 @@ export async function getJobStatus(queueName: string, jobId: string) {
 // Get queue stats
 export async function getQueueStats(queueName: string) {
   let queue: Queue;
-  
+
   switch (queueName) {
     case 'docker-build':
       queue = dockerBuildQueue;
@@ -193,14 +226,14 @@ export async function getQueueStats(queueName: string) {
     default:
       throw new Error(`Unknown queue: ${queueName}`);
   }
-  
+
   const [waiting, active, completed, failed] = await Promise.all([
     queue.getWaitingCount(),
     queue.getActiveCount(),
     queue.getCompletedCount(),
     queue.getFailedCount(),
   ]);
-  
+
   return {
     waiting,
     active,
