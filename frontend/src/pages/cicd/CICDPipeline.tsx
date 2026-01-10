@@ -1,7 +1,31 @@
 import { useState, useEffect } from 'react';
-import { Play, CheckCircle, XCircle, Clock, Code, BookOpen, History, Settings, FileCode, Lightbulb, Zap, Activity, Package, Lock, Target, RefreshCw } from 'lucide-react';
+import {
+  Play,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Code,
+  BookOpen,
+  History,
+  Settings,
+  FileCode,
+  Lightbulb,
+  Zap,
+  Activity,
+  Package,
+  Lock,
+  Target,
+  RefreshCw,
+  GitBranch,
+  NotebookPen,
+} from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { API_BASE_URL, WS_URL } from '@/config/constants';
+import { PageLayout } from '@/layouts/PageLayout';
+import { PageHeader } from '@/layouts/PageHeader';
+import { Tabs } from '@/components/ui/tabs/Tabs';
+import { TabItem } from '@/components/ui/tabs/types';
+import { NoteEditor } from '@/components/ui/notes/NoteEditor';
 
 interface WorkflowRun {
   id: string;
@@ -46,8 +70,10 @@ interface Template {
   language: string;
 }
 
+type CICDTab = 'learn' | 'create' | 'run' | 'history' | 'memo';
+
 export function CICDPipeline() {
-  const [activeTab, setActiveTab] = useState<'learn' | 'create' | 'run' | 'history'>('learn');
+  const [activeTab, setActiveTab] = useState<CICDTab>('learn');
   const [yaml, setYaml] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
@@ -71,9 +97,9 @@ export function CICDPipeline() {
 
   useEffect(() => {
     if (!lastMessage) return;
-    
+
     console.log('Received WebSocket message:', lastMessage);
-    
+
     if (lastMessage.type === 'cicd:run:created' || lastMessage.type === 'cicd:run:started') {
       setCurrentRun(lastMessage.data);
       setIsRunning(true);
@@ -84,7 +110,7 @@ export function CICDPipeline() {
     } else if (lastMessage.type?.startsWith('cicd:')) {
       // Update current run with real-time updates directly from WebSocket data
       // Don't fetch again - use the data from the WebSocket message
-      setCurrentRun(prev => {
+      setCurrentRun((prev) => {
         if (!prev) return lastMessage.data;
         if (lastMessage.data?.id === prev.id) {
           return lastMessage.data;
@@ -125,19 +151,9 @@ export function CICDPipeline() {
     }
   };
 
-  const loadRunDetails = async (runId: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/cicd/runs/${runId}`);
-      const data = await response.json();
-      setCurrentRun(data);
-    } catch (error) {
-      console.error('Failed to load run details:', error);
-    }
-  };
-
   const validateWorkflow = async () => {
     if (!yaml.trim()) return;
-    
+
     setIsValidating(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/cicd/validate`, {
@@ -145,7 +161,7 @@ export function CICDPipeline() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ yaml }),
       });
-      
+
       const data = await response.json();
       setValidationResult(data);
     } catch (error) {
@@ -157,10 +173,10 @@ export function CICDPipeline() {
 
   const runWorkflow = async () => {
     if (!yaml.trim()) return;
-    
+
     setIsRunning(true);
     setCurrentRun(null);
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/cicd/run`, {
         method: 'POST',
@@ -172,17 +188,17 @@ export function CICDPipeline() {
           executionMode, // Add execution mode
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to run workflow');
       }
-      
+
       const data = await response.json();
       console.log('Workflow queued:', data, 'mode:', executionMode);
-      
+
       setActiveTab('run');
-      
+
       // Wait a moment for the workflow to start, then poll for updates
       setTimeout(() => {
         loadRuns();
@@ -225,61 +241,45 @@ export function CICDPipeline() {
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${seconds}s`;
   };
 
-  return (
-    <div className="container mx-auto p-6 h-full flex flex-col">
-      <div className="rounded-lg bg-card border px-6 py-4 mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">CI/CD Pipeline</h1>
-        <p className="text-gray-600 mt-1">GitHub Actionsスタイルのワークフロー実行シミュレーション</p>
-      </div>
+  const tabs: TabItem<CICDTab>[] = [
+    {
+      key: 'learn',
+      label: '学習',
+      icon: BookOpen,
+    },
+    {
+      key: 'create',
+      label: 'ワークフロー作成',
+      icon: Code,
+    },
+    {
+      key: 'run',
+      label: '実行中',
+      icon: Play,
+    },
+    {
+      key: 'history',
+      label: '実行履歴',
+      icon: History,
+    },
+    {
+      key: 'memo',
+      label: 'メモ',
+      icon: NotebookPen,
+    },
+  ];
 
-      <div className="rounded-t-lg bg-card border-x border-t">
-        <div className="flex space-x-1 px-6">
-          <button
-            onClick={() => setActiveTab('learn')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'learn'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 inline-block mr-2" />
-            学習
-          </button>
-          <button
-            onClick={() => setActiveTab('create')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'create'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Code className="w-4 h-4 inline-block mr-2" />
-            ワークフロー作成
-          </button>
-          <button
-            onClick={() => setActiveTab('run')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'run'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Play className="w-4 h-4 inline-block mr-2" />
-            実行中
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'history'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <History className="w-4 h-4 inline-block mr-2" />
-            実行履歴
-          </button>
-        </div>
-      </div>
+  return (
+    <PageLayout>
+      <PageHeader
+        title="CI/CDパイプライン"
+        description="GitHub Actionsスタイルのワークフロー実行シミュレーション"
+        Icon={GitBranch}
+        bgColor="bg-gradient-to-br from-orange-500 to-red-500"
+      />
+
+      {/* Tabs */}
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="flex-1 overflow-auto rounded-b-lg bg-card border-x border-b">
         {activeTab === 'learn' && (
@@ -290,25 +290,34 @@ export function CICDPipeline() {
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg shadow-lg">
                   <Settings className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">CI/CDとは？</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                  CI/CDとは？
+                </h2>
               </div>
               <div className="prose max-w-none">
                 <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
-                  CI/CD（Continuous Integration / Continuous Delivery）は、ソフトウェア開発における自動化されたワークフローです。
+                  CI/CD（Continuous Integration / Continuous
+                  Delivery）は、ソフトウェア開発における自動化されたワークフローです。
                   コードの変更を自動的にビルド・テスト・デプロイすることで、開発速度と品質を向上させます。
                 </p>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/20 hover:border-blue-500/40 transition-colors">
                     <h3 className="font-bold text-blue-400 mb-2">Continuous Integration</h3>
-                    <p className="text-sm text-muted-foreground">コードの変更を自動的にビルド・テストし、問題を早期発見</p>
+                    <p className="text-sm text-muted-foreground">
+                      コードの変更を自動的にビルド・テストし、問題を早期発見
+                    </p>
                   </div>
                   <div className="bg-cyan-500/5 rounded-lg p-4 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
                     <h3 className="font-bold text-cyan-400 mb-2">Continuous Delivery</h3>
-                    <p className="text-sm text-muted-foreground">テスト済みのコードを自動的にデプロイ可能な状態に</p>
+                    <p className="text-sm text-muted-foreground">
+                      テスト済みのコードを自動的にデプロイ可能な状態に
+                    </p>
                   </div>
                   <div className="bg-teal-500/5 rounded-lg p-4 border border-teal-500/20 hover:border-teal-500/40 transition-colors">
                     <h3 className="font-bold text-teal-400 mb-2">Continuous Deployment</h3>
-                    <p className="text-sm text-muted-foreground">本番環境への自動デプロイまで実施</p>
+                    <p className="text-sm text-muted-foreground">
+                      本番環境への自動デプロイまで実施
+                    </p>
                   </div>
                 </div>
               </div>
@@ -320,39 +329,51 @@ export function CICDPipeline() {
                 <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg shadow-lg">
                   <Code className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">GitHub Actionsの基本</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  GitHub Actionsの基本
+                </h2>
               </div>
               <div className="prose max-w-none">
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <h3 className="font-bold text-foreground mb-3 text-lg">ワークフローの構成要素</h3>
+                    <h3 className="font-bold text-foreground mb-3 text-lg">
+                      ワークフローの構成要素
+                    </h3>
                     <div className="space-y-3">
                       <div className="flex items-start gap-3 bg-purple-500/5 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
                         <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-foreground">Workflow</strong>
-                          <p className="text-sm text-muted-foreground">自動化されたプロセス全体を定義</p>
+                          <p className="text-sm text-muted-foreground">
+                            自動化されたプロセス全体を定義
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 bg-purple-500/5 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
                         <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-foreground">Job</strong>
-                          <p className="text-sm text-muted-foreground">ワークフロー内の実行単位（並列実行可能）</p>
+                          <p className="text-sm text-muted-foreground">
+                            ワークフロー内の実行単位（並列実行可能）
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 bg-purple-500/5 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
                         <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-foreground">Step</strong>
-                          <p className="text-sm text-muted-foreground">ジョブ内の個別タスク（順次実行）</p>
+                          <p className="text-sm text-muted-foreground">
+                            ジョブ内の個別タスク（順次実行）
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 bg-purple-500/5 rounded-lg p-3 border border-purple-500/20 hover:border-purple-500/40 transition-colors">
                         <CheckCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <strong className="text-foreground">Action</strong>
-                          <p className="text-sm text-muted-foreground">再利用可能なステップのコンポーネント</p>
+                          <p className="text-sm text-muted-foreground">
+                            再利用可能なステップのコンポーネント
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -370,14 +391,18 @@ export function CICDPipeline() {
                       <div className="flex items-start gap-3 bg-pink-500/5 rounded-lg p-3 border border-pink-500/20 hover:border-pink-500/40 transition-colors">
                         <Play className="w-5 h-5 text-pink-400 flex-shrink-0 mt-0.5" />
                         <div>
-                          <code className="text-sm font-semibold text-foreground">pull_request</code>
+                          <code className="text-sm font-semibold text-foreground">
+                            pull_request
+                          </code>
                           <p className="text-sm text-muted-foreground">プルリクエスト時に実行</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 bg-pink-500/5 rounded-lg p-3 border border-pink-500/20 hover:border-pink-500/40 transition-colors">
                         <Play className="w-5 h-5 text-pink-400 flex-shrink-0 mt-0.5" />
                         <div>
-                          <code className="text-sm font-semibold text-foreground">workflow_dispatch</code>
+                          <code className="text-sm font-semibold text-foreground">
+                            workflow_dispatch
+                          </code>
                           <p className="text-sm text-muted-foreground">手動実行を許可</p>
                         </div>
                       </div>
@@ -400,17 +425,22 @@ export function CICDPipeline() {
                 <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg shadow-lg">
                   <FileCode className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">ワークフローYAMLの書き方</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                  ワークフローYAMLの書き方
+                </h2>
               </div>
-              
+
               <div className="space-y-6">
                 <div>
                   <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">基本構造</span>
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                      基本構造
+                    </span>
                     基本的なワークフロー
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-700">
-                    <pre className="text-sm text-gray-100"><code>{`name: CI Workflow
+                    <pre className="text-sm text-gray-100">
+                      <code>{`name: CI Workflow
 on:
   push:
     branches: [ main, develop ]
@@ -429,17 +459,21 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run tests
-        run: npm test`}</code></pre>
+        run: npm test`}</code>
+                    </pre>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">並列実行</span>
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                      並列実行
+                    </span>
                     複数ジョブの並列実行
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-700">
-                    <pre className="text-sm text-gray-100"><code>{`jobs:
+                    <pre className="text-sm text-gray-100">
+                      <code>{`jobs:
   test:
     runs-on: ubuntu-latest
     steps:
@@ -456,17 +490,21 @@ jobs:
     needs: [test, lint]  # test と lint が成功後に実行
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploying..."`}</code></pre>
+      - run: echo "Deploying..."`}</code>
+                    </pre>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">環境変数</span>
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                      環境変数
+                    </span>
                     環境変数とシークレット
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-700">
-                    <pre className="text-sm text-gray-100"><code>{`jobs:
+                    <pre className="text-sm text-gray-100">
+                      <code>{`jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
@@ -479,17 +517,21 @@ jobs:
           DB_PASSWORD: \${{ secrets.DB_PASSWORD }}
         run: |
           echo "Deploying to \${NODE_ENV}"
-          ./deploy.sh`}</code></pre>
+          ./deploy.sh`}</code>
+                    </pre>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">マトリックス</span>
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                      マトリックス
+                    </span>
                     マトリックスビルド
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-700">
-                    <pre className="text-sm text-gray-100"><code>{`jobs:
+                    <pre className="text-sm text-gray-100">
+                      <code>{`jobs:
   test:
     runs-on: \${{ matrix.os }}
     strategy:
@@ -501,17 +543,21 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: \${{ matrix.node-version }}
-      - run: npm test`}</code></pre>
+      - run: npm test`}</code>
+                    </pre>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">条件分岐</span>
+                    <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                      条件分岐
+                    </span>
                     条件付き実行
                   </h3>
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-700">
-                    <pre className="text-sm text-gray-100"><code>{`jobs:
+                    <pre className="text-sm text-gray-100">
+                      <code>{`jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -522,7 +568,8 @@ jobs:
       
       - name: Notify failure
         if: failure()  # 失敗した場合のみ
-        run: ./notify-failure.sh`}</code></pre>
+        run: ./notify-failure.sh`}</code>
+                    </pre>
                   </div>
                 </div>
               </div>
@@ -534,7 +581,9 @@ jobs:
                 <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-lg">
                   <Lightbulb className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">ベストプラクティス</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                  ベストプラクティス
+                </h2>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-green-500/5 rounded-lg border-l-4 border-green-500 p-5 shadow-sm hover:shadow-md hover:bg-green-500/10 transition-all">
@@ -542,42 +591,56 @@ jobs:
                     <Zap className="w-5 h-5 text-green-400" />
                     高速なフィードバックループ
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">テストを早い段階で実行し、問題を素早く発見。軽量なテストから実行して早期に失敗させる。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    テストを早い段階で実行し、問題を素早く発見。軽量なテストから実行して早期に失敗させる。
+                  </p>
                 </div>
                 <div className="bg-blue-500/5 rounded-lg border-l-4 border-blue-500 p-5 shadow-sm hover:shadow-md hover:bg-blue-500/10 transition-all">
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-blue-400" />
                     並列実行の活用
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">独立したジョブは並列実行してビルド時間を短縮。マトリックス戦略で複数環境を同時テスト。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    独立したジョブは並列実行してビルド時間を短縮。マトリックス戦略で複数環境を同時テスト。
+                  </p>
                 </div>
                 <div className="bg-purple-500/5 rounded-lg border-l-4 border-purple-500 p-5 shadow-sm hover:shadow-md hover:bg-purple-500/10 transition-all">
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <Package className="w-5 h-5 text-purple-400" />
                     キャッシュの活用
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">依存関係をキャッシュして実行時間を削減。actions/cache を使用してnode_modules等を保存。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    依存関係をキャッシュして実行時間を削減。actions/cache
+                    を使用してnode_modules等を保存。
+                  </p>
                 </div>
                 <div className="bg-orange-500/5 rounded-lg border-l-4 border-orange-500 p-5 shadow-sm hover:shadow-md hover:bg-orange-500/10 transition-all">
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <Lock className="w-5 h-5 text-orange-400" />
                     シークレット管理
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">APIキーなどの機密情報は環境変数で管理。リポジトリシークレットやEnvironment secretsを活用。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    APIキーなどの機密情報は環境変数で管理。リポジトリシークレットやEnvironment
+                    secretsを活用。
+                  </p>
                 </div>
                 <div className="bg-cyan-500/5 rounded-lg border-l-4 border-cyan-500 p-5 shadow-sm hover:shadow-md hover:bg-cyan-500/10 transition-all">
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <Target className="w-5 h-5 text-cyan-400" />
                     ジョブの粒度
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">ジョブは単一責任に。テスト、ビルド、デプロイは別々のジョブに分離して管理しやすく。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    ジョブは単一責任に。テスト、ビルド、デプロイは別々のジョブに分離して管理しやすく。
+                  </p>
                 </div>
                 <div className="bg-pink-500/5 rounded-lg border-l-4 border-pink-500 p-5 shadow-sm hover:shadow-md hover:bg-pink-500/10 transition-all">
                   <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 text-pink-400" />
                     再利用可能なワークフロー
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">共通処理は再利用可能なワークフローやコンポジットアクションとして切り出す。</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    共通処理は再利用可能なワークフローやコンポジットアクションとして切り出す。
+                  </p>
                 </div>
               </div>
             </div>
@@ -651,11 +714,14 @@ jobs:
               </div>
 
               {validationResult && (
-                <div className={`p-3 rounded text-sm border ${validationResult.valid ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+                <div
+                  className={`p-3 rounded text-sm border ${validationResult.valid ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}
+                >
                   {validationResult.valid ? (
                     <div>
                       <CheckCircle className="w-4 h-4 inline mr-2" />
-                      ワークフローは有効です（ジョブ: {validationResult.workflow.jobCount}、ステップ: {validationResult.workflow.stepCount}）
+                      ワークフローは有効です（ジョブ: {validationResult.workflow.jobCount}
+                      、ステップ: {validationResult.workflow.stepCount}）
                     </div>
                   ) : (
                     <div>
@@ -689,13 +755,26 @@ jobs:
               <div className="max-w-2xl mx-auto text-center py-12">
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <div className="flex gap-1">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0ms' }}
+                    ></div>
+                    <div
+                      className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '150ms' }}
+                    ></div>
+                    <div
+                      className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '300ms' }}
+                    ></div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">ワークフローを準備中...</h3>
-                <p className="text-muted-foreground">実行キューに追加されました。まもなく開始します。</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  ワークフローを準備中...
+                </h3>
+                <p className="text-muted-foreground">
+                  実行キューに追加されました。まもなく開始します。
+                </p>
               </div>
             )}
             {currentRun ? (
@@ -708,9 +787,18 @@ jobs:
                         {currentRun.status === 'in_progress' && (
                           <div className="flex items-center gap-2">
                             <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              <div
+                                className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0ms' }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '150ms' }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '300ms' }}
+                              ></div>
                             </div>
                             <span className="text-sm text-blue-400 font-medium">実行中...</span>
                           </div>
@@ -721,18 +809,29 @@ jobs:
                       </p>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(currentRun.status, currentRun.conclusion)}`}>
-                        {currentRun.status === 'in_progress' ? '実行中' : currentRun.status === 'completed' ? '完了' : currentRun.status}
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(currentRun.status, currentRun.conclusion)}`}
+                      >
+                        {currentRun.status === 'in_progress'
+                          ? '実行中'
+                          : currentRun.status === 'completed'
+                            ? '完了'
+                            : currentRun.status}
                       </span>
                       {currentRun.duration && (
-                        <span className="text-sm text-muted-foreground">実行時間: {formatDuration(currentRun.duration)}</span>
+                        <span className="text-sm text-muted-foreground">
+                          実行時間: {formatDuration(currentRun.duration)}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {currentRun.jobs.map((job) => (
-                  <div key={job.id} className="bg-card rounded-lg border hover:shadow-lg transition-all">
+                  <div
+                    key={job.id}
+                    className="bg-card rounded-lg border hover:shadow-lg transition-all"
+                  >
                     <button
                       onClick={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
                       className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
@@ -756,9 +855,13 @@ jobs:
                       </div>
                       <div className="flex items-center space-x-4">
                         {job.duration && (
-                          <span className="text-sm text-muted-foreground">{formatDuration(job.duration)}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {formatDuration(job.duration)}
+                          </span>
                         )}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status, job.conclusion)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status, job.conclusion)}`}
+                        >
                           {job.status}
                         </span>
                       </div>
@@ -769,7 +872,9 @@ jobs:
                         {job.steps.map((step) => (
                           <div key={step.id} className="border-b last:border-b-0">
                             <button
-                              onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
+                              onClick={() =>
+                                setExpandedStep(expandedStep === step.id ? null : step.id)
+                              }
                               className="w-full px-8 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center space-x-3">
@@ -784,14 +889,22 @@ jobs:
                                   {step.status === 'in_progress' && (
                                     <span className="flex items-center gap-1">
                                       <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
-                                      <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
-                                      <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                                      <div
+                                        className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+                                        style={{ animationDelay: '200ms' }}
+                                      ></div>
+                                      <div
+                                        className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+                                        style={{ animationDelay: '400ms' }}
+                                      ></div>
                                     </span>
                                   )}
                                 </span>
                               </div>
                               {step.duration && (
-                                <span className="text-sm text-muted-foreground">{formatDuration(step.duration)}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDuration(step.duration)}
+                                </span>
                               )}
                             </button>
 
@@ -804,15 +917,20 @@ jobs:
                                   </div>
                                 )}
                                 {step.output.map((line, index) => (
-                                  <div 
-                                    key={index} 
+                                  <div
+                                    key={index}
                                     className={`whitespace-pre-wrap ${
-                                      line.startsWith('$') ? 'text-green-400 font-semibold' :
-                                      line.startsWith('Error') || line.includes('failed') ? 'text-red-400' :
-                                      line.startsWith('✓') ? 'text-green-400' :
-                                      line.startsWith('⚠️') ? 'text-yellow-400' :
-                                      line.startsWith('🔧') || line.startsWith('📋') ? 'text-blue-400' :
-                                      'text-gray-300'
+                                      line.startsWith('$')
+                                        ? 'text-green-400 font-semibold'
+                                        : line.startsWith('Error') || line.includes('failed')
+                                          ? 'text-red-400'
+                                          : line.startsWith('✓')
+                                            ? 'text-green-400'
+                                            : line.startsWith('⚠️')
+                                              ? 'text-yellow-400'
+                                              : line.startsWith('🔧') || line.startsWith('📋')
+                                                ? 'text-blue-400'
+                                                : 'text-gray-300'
                                     }`}
                                   >
                                     {line}
@@ -821,8 +939,14 @@ jobs:
                                 {step.status === 'in_progress' && (
                                   <div className="flex items-center gap-2 mt-2 text-blue-300">
                                     <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"></div>
-                                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '100ms' }}></div>
-                                    <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+                                    <div
+                                      className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"
+                                      style={{ animationDelay: '100ms' }}
+                                    ></div>
+                                    <div
+                                      className="w-1 h-1 bg-blue-400 rounded-full animate-bounce"
+                                      style={{ animationDelay: '200ms' }}
+                                    ></div>
                                   </div>
                                 )}
                               </div>
@@ -837,8 +961,12 @@ jobs:
             ) : (
               <div className="max-w-2xl mx-auto text-center py-12">
                 <Settings className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">実行中のワークフローはありません</h3>
-                <p className="text-gray-600">「ワークフロー作成」タブでワークフローを実行してください</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  実行中のワークフローはありません
+                </h3>
+                <p className="text-gray-600">
+                  「ワークフロー作成」タブでワークフローを実行してください
+                </p>
               </div>
             )}
           </div>
@@ -851,27 +979,37 @@ jobs:
                 <div className="text-center py-12">
                   <History className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">実行履歴がありません</h3>
-                  <p className="text-gray-600">ワークフローを実行すると、ここに履歴が表示されます</p>
+                  <p className="text-gray-600">
+                    ワークフローを実行すると、ここに履歴が表示されます
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {runs.map((run) => (
-                    <div key={run.id} className="bg-card rounded-lg border p-4 hover:shadow-lg transition-shadow">
+                    <div
+                      key={run.id}
+                      className="bg-card rounded-lg border p-4 hover:shadow-lg transition-shadow"
+                    >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 flex-1">
                           {getStatusIcon(run.status, run.conclusion)}
                           <div>
                             <div className="font-semibold">{run.workflowName}</div>
                             <div className="text-sm text-gray-600">
-                              {new Date(run.startTime).toLocaleString('ja-JP')} • {run.trigger} • {run.branch}
+                              {new Date(run.startTime).toLocaleString('ja-JP')} • {run.trigger} •{' '}
+                              {run.branch}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-4">
                           {run.duration && (
-                            <span className="text-sm text-gray-600">{formatDuration(run.duration)}</span>
+                            <span className="text-sm text-gray-600">
+                              {formatDuration(run.duration)}
+                            </span>
                           )}
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status, run.conclusion)}`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status, run.conclusion)}`}
+                          >
                             {run.conclusion || run.status}
                           </span>
                           <button
@@ -893,6 +1031,8 @@ jobs:
           </div>
         )}
       </div>
-    </div>
+
+      {activeTab === 'memo' && <NoteEditor pageId="cicd-pipeline" pageTitle="CI/CD Pipeline" />}
+    </PageLayout>
   );
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"cloud-dojo-worker/internal/docker"
 	"cloud-dojo-worker/internal/k8s"
+	"cloud-dojo-worker/internal/network"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -138,3 +139,34 @@ func handleListDeployments(svc *k8s.Service) fiber.Handler {
 		return c.JSON(fiber.Map{"deployments": deployments})
 	}
 }
+
+// ネットワーク基礎のための環境構築
+func handleCreateLab(svc *network.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req struct {
+			NodeCount int    `json:"nodeCount"`
+			NetworkName string `json:"networkName"`
+		}
+
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		}
+
+		if req.NodeCount <= 0 {
+			req.NodeCount = 3 // デフォルトのノード数
+		}
+		if req.NetworkName == "" {
+			req.NetworkName = "cloud-dojo-net" // デフォルトのネットワーク名
+		}
+
+		labID, err := svc.CreateLab(c.Context(), req.LabType)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.JSON(fiber.Map{
+			"labId":  labID,
+			"status": "created",
+		})
+	}
+}
+

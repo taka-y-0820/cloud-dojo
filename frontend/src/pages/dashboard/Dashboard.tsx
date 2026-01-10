@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/constants';
+import { PageLayout } from '@/layouts/PageLayout';
 
 const stats = [
   {
@@ -63,7 +64,7 @@ const learningPaths = [
 
 export function Dashboard() {
   return (
-    <div className="space-y-8">
+    <PageLayout>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -84,17 +85,24 @@ export function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            whileHover={{ scale: 1.05, y: -5 }}
+            whileHover={{ y: -8 }}
             className="relative group"
           >
-            <div className="border rounded-2xl p-6 bg-card hover:shadow-2xl transition-all duration-300 relative overflow-hidden">
+            <div className="border rounded-2xl p-6 bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300 relative overflow-hidden">
               {/* Gradient background on hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-              
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+              />
+
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
-                    <stat.icon className={`w-6 h-6 bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`} style={{ WebkitTextFillColor: 'transparent' }} />
+                  <div
+                    className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}
+                  >
+                    <stat.icon
+                      className={`w-6 h-6 bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}
+                      style={{ WebkitTextFillColor: 'transparent' }}
+                    />
                   </div>
                   <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
@@ -118,7 +126,7 @@ export function Dashboard() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="lg:col-span-2 border rounded-2xl p-6 bg-card hover:shadow-xl transition-shadow duration-300"
+          className="lg:col-span-2 border rounded-2xl p-8 bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
@@ -170,7 +178,7 @@ export function Dashboard() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="border rounded-2xl p-6 bg-card hover:shadow-xl transition-shadow duration-300"
+          className="border rounded-2xl p-8 bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300"
         >
           <div className="flex items-center gap-2 mb-6">
             <Activity className="w-6 h-6 text-primary" />
@@ -245,6 +253,6 @@ export function Dashboard() {
           </Link>
         </div>
       </motion.div>
-    </div>
+    </PageLayout>
   );
 }

@@ -18,6 +18,7 @@ model User {
   progress     LearningProgress?
   executions   Execution[]
   achievements Achievement[]
+  completedLessons CompletedLesson[]
 }
 
 model LearningProgress {
@@ -68,4 +69,19 @@ model Achievement {
   description String
   icon        String
   unlockedAt  DateTime @default(now())
+}
+
+model CompletedLesson {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  courseId   String
+  moduleId   String
+  lessonId   String
+  score      Int      @default(10)
+  timeSpent  Int?     // in seconds
+  completedAt DateTime @default(now())
+
+  @@unique([userId, courseId, moduleId, lessonId])
+  @@index([userId])
 }

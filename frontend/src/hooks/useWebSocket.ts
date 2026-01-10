@@ -18,7 +18,7 @@ export function useWebSocket(url: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const ws = useRef<WebSocket | null>(null);
-  const reconnectTimeout = useRef<number>();
+  const reconnectTimeout = useRef<number | undefined>();
 
   useEffect(() => {
     function connect() {
@@ -45,7 +45,7 @@ export function useWebSocket(url: string) {
       websocket.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
-        
+
         // Attempt to reconnect after 3 seconds
         reconnectTimeout.current = setTimeout(() => {
           console.log('Attempting to reconnect...');

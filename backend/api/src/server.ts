@@ -26,7 +26,13 @@ const fastify = Fastify({
 
 // Register plugins
 await fastify.register(cors, {
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'null'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'null',
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
@@ -56,9 +62,9 @@ const start = async () => {
       host: '0.0.0.0',
     });
     console.log(`🚀 API Server running on port ${config.port}`);
-    
+
     // Initialize BullMQ workers after server starts
-    initializeWorkers(fastify);
+    await initializeWorkers(fastify);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
