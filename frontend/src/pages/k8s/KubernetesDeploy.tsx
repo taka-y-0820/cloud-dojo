@@ -14,12 +14,16 @@ import {
   Box,
   Zap,
   Globe,
+  NotebookPen,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import axios from 'axios';
 import { PageLayout } from '@/layouts/PageLayout';
 import { PageHeader } from '@/layouts/PageHeader';
+import { Tabs } from '@/components/ui/tabs/Tabs';
+import { TabItem } from '@/components/ui/tabs/types';
+import { NoteEditor } from '@/components/ui/notes/NoteEditor';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/ws';
@@ -209,11 +213,11 @@ spec:
   },
 ];
 
+type kubernetesDeployTab = 'learn' | 'deploy' | 'pods' | 'deployments' | 'services' | 'memo';
+
 export function KubernetesDeploy() {
   const [manifest, setManifest] = useState(sampleManifest);
-  const [activeTab, setActiveTab] = useState<
-    'learn' | 'deploy' | 'pods' | 'deployments' | 'services'
-  >('learn');
+  const [activeTab, setActiveTab] = useState<kubernetesDeployTab>('learn');
   const [namespace, setNamespace] = useState('default');
   const [namespaces, setNamespaces] = useState<string[]>(['default']);
   const [isDeploying, setIsDeploying] = useState(false);
@@ -344,6 +348,15 @@ export function KubernetesDeploy() {
 
   const isMockMode = currentContext?.includes('mock') || currentContext?.includes('simulation');
 
+  const tabs: TabItem<kubernetesDeployTab>[] = [
+    { key: 'learn', label: '学習', icon: BookOpen },
+    { key: 'deploy', label: 'デプロイ', icon: FileText },
+    { key: 'pods', label: `Pods (${pods.length})`, icon: Box },
+    { key: 'deployments', label: `Deployments (${deployments.length})`, icon: Layers },
+    { key: 'services', label: `Services (${services.length})`, icon: Globe },
+    { key: 'memo', label: 'メモ', icon: NotebookPen },
+  ];
+
   return (
     <PageLayout>
       {/* Mock Mode Banner */}
@@ -372,55 +385,7 @@ export function KubernetesDeploy() {
       />
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border">
-        {(['learn', 'deploy', 'pods', 'deployments', 'services'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              if (tab === 'pods') loadPods();
-              if (tab === 'deployments') loadDeployments();
-              if (tab === 'services') loadServices();
-            }}
-            className={`px-6 py-3 font-medium transition-all ${
-              activeTab === tab
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab === 'learn' && (
-              <>
-                <BookOpen className="w-4 h-4 inline mr-2" />
-                学習
-              </>
-            )}
-            {tab === 'deploy' && (
-              <>
-                <FileText className="w-4 h-4 inline mr-2" />
-                デプロイ
-              </>
-            )}
-            {tab === 'pods' && (
-              <>
-                <Box className="w-4 h-4 inline mr-2" />
-                Pods ({pods.length})
-              </>
-            )}
-            {tab === 'deployments' && (
-              <>
-                <Layers className="w-4 h-4 inline mr-2" />
-                Deployments ({deployments.length})
-              </>
-            )}
-            {tab === 'services' && (
-              <>
-                <Globe className="w-4 h-4 inline mr-2" />
-                Services ({services.length})
-              </>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Learn Tab */}
       {activeTab === 'learn' && (
@@ -873,6 +838,10 @@ export function KubernetesDeploy() {
             </div>
           )}
         </motion.div>
+      )}
+
+      {activeTab === 'memo' && (
+        <NoteEditor pageId="kubernetes-deploy" pageTitle="Kubernetes Deploy" />
       )}
 
       {/* Template Dialog */}

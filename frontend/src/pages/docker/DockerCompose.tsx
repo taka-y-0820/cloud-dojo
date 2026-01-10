@@ -19,11 +19,15 @@ import {
   Database,
   Activity,
   AlertCircle,
+  NotebookPen,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import axios from 'axios';
 import { PageLayout } from '@/layouts/PageLayout';
+import { Tabs } from '@/components/ui/tabs/Tabs';
+import { TabItem } from '@/components/ui/tabs/types';
+import { NoteEditor } from '@/components/ui/notes/NoteEditor';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/ws';
@@ -297,9 +301,11 @@ volumes:
   },
 ];
 
+type dockerComposeTab = 'learn' | 'editor' | 'services' | 'graph' | 'memo';
+
 export function DockerCompose() {
   const [compose, setCompose] = useState(sampleCompose);
-  const [activeTab, setActiveTab] = useState<'learn' | 'editor' | 'services' | 'graph'>('learn');
+  const [activeTab, setActiveTab] = useState<dockerComposeTab>('learn');
   const [services, setServices] = useState<Record<string, Service>>({});
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -590,6 +596,14 @@ export function DockerCompose() {
     }
   };
 
+  const tabs: TabItem<dockerComposeTab>[] = [
+    { key: 'learn', label: '学習', icon: BookOpen },
+    { key: 'editor', label: 'エディタ', icon: FileCode },
+    { key: 'services', label: 'サービス一覧', icon: Box },
+    { key: 'graph', label: '依存関係グラフ', icon: Network },
+    { key: 'memo', label: 'メモ', icon: NotebookPen },
+  ];
+
   return (
     <PageLayout>
       {/* Header */}
@@ -612,44 +626,7 @@ export function DockerCompose() {
       </motion.div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border">
-        {(['learn', 'editor', 'services', 'graph'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-medium transition-all ${
-              activeTab === tab
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab === 'learn' && (
-              <>
-                <BookOpen className="w-4 h-4 inline mr-2" />
-                学習
-              </>
-            )}
-            {tab === 'editor' && (
-              <>
-                <FileCode className="w-4 h-4 inline mr-2" />
-                エディタ
-              </>
-            )}
-            {tab === 'services' && (
-              <>
-                <Box className="w-4 h-4 inline mr-2" />
-                サービス一覧
-              </>
-            )}
-            {tab === 'graph' && (
-              <>
-                <Network className="w-4 h-4 inline mr-2" />
-                依存関係グラフ
-              </>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Learn Tab */}
       {activeTab === 'learn' && (
@@ -1305,6 +1282,8 @@ volumes:            # ボリューム定義
           </div>
         </motion.div>
       )}
+
+      {activeTab === 'memo' && <NoteEditor pageId="docker-compose" pageTitle="Docker Compose" />}
 
       {/* Template Dialog */}
       <AnimatePresence>

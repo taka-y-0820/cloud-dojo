@@ -16,11 +16,15 @@ import {
   HelpCircle,
   BookOpen,
   Lightbulb,
+  NotebookPen,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import axios from 'axios';
 import { PageLayout } from '@/layouts/PageLayout';
+import { Tabs } from '@/components/ui/tabs/Tabs';
+import { TabItem } from '@/components/ui/tabs/types';
+import { NoteEditor } from '@/components/ui/notes/NoteEditor';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/ws';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
@@ -233,13 +237,15 @@ const dockerInstructions = {
   },
 };
 
+type dockerBuildTab = 'learn' | 'build' | 'containers' | 'images' | 'memo';
+
 export function DockerBuild() {
+  const [activeTab, setActiveTab] = useState<dockerBuildTab>('learn');
   const [buildSession, setBuildSession] = useState<BuildSession | null>(null);
   const [queueJob, setQueueJob] = useState<QueueJobInfo | null>(null);
   const [isBuilding, setIsBuilding] = useState(false);
   const [containers, setContainers] = useState<ContainerInfo[]>([]);
   const [images, setImages] = useState<ImageInfo[]>([]);
-  const [activeTab, setActiveTab] = useState<'learn' | 'build' | 'containers' | 'images'>('learn');
   const [dockerfile, setDockerfile] = useState(sampleDockerfile);
   const [imageName, setImageName] = useState('cloud-dojo-app');
   const [imageTag, setImageTag] = useState('latest');
@@ -450,6 +456,31 @@ export function DockerBuild() {
     }
   };
 
+  const tabs: TabItem<dockerBuildTab>[] = [
+    {
+      key: 'learn',
+      label: '学習',
+      icon: BookOpen,
+    },
+    {
+      key: 'build',
+      label: 'ビルド',
+    },
+    {
+      key: 'containers',
+      label: 'コンテナ',
+    },
+    {
+      key: 'images',
+      label: 'イメージ',
+    },
+    {
+      key: 'memo',
+      label: 'メモ',
+      icon: NotebookPen,
+    },
+  ];
+
   return (
     <PageLayout>
       {/* Header */}
@@ -460,74 +491,14 @@ export function DockerBuild() {
       >
         <div>
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Docker Build Visualization
+            Docker Build
           </h1>
           <p className="text-muted-foreground">実際のDocker環境でコンテナをビルド・管理</p>
         </div>
       </motion.div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border">
-        <button
-          onClick={() => setActiveTab('learn')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
-            activeTab === 'learn' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <BookOpen className="w-4 h-4 inline mr-2" />
-          学習
-          {activeTab === 'learn' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('build')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
-            activeTab === 'build' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          ビルド
-          {activeTab === 'build' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('containers')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
-            activeTab === 'containers'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          コンテナ ({containers.length})
-          {activeTab === 'containers' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('images')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
-            activeTab === 'images' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          イメージ ({images.length})
-          {activeTab === 'images' && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-      </div>
+      {/* Tabs */}
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Learn Tab */}
       {activeTab === 'learn' && (
@@ -1186,6 +1157,8 @@ export function DockerBuild() {
           )}
         </motion.div>
       )}
+
+      {activeTab === 'memo' && <NoteEditor pageId="docker-build" pageTitle="Docker Build" />}
 
       {/* Run Container Dialog */}
       <AnimatePresence>

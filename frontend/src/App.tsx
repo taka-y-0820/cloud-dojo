@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
+import { NetworkBasics } from '@/pages/network/NetworkBasics';
 import { DockerBuild } from '@/pages/docker/DockerBuild';
 import { DockerCompose } from '@/pages/docker/DockerCompose';
 import { KubernetesDeploy } from '@/pages/k8s/KubernetesDeploy';
@@ -33,6 +34,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/network"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <NetworkBasics />
             </AppLayout>
           </ProtectedRoute>
         }

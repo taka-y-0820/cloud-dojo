@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
+  Wifi,
   Container,
   Layers,
   Network,
@@ -16,6 +17,12 @@ const navItems = [
     icon: LayoutDashboard,
     label: 'Dashboard',
     color: 'from-blue-500 to-cyan-500',
+  },
+  {
+    to: ROUTES.NETWORK,
+    icon: Wifi,
+    label: 'Network Basics',
+    color: 'from-cyan-500 to-blue-500',
   },
   { to: ROUTES.DOCKER, icon: Container, label: 'Docker Build', color: 'from-blue-600 to-blue-400' },
   {

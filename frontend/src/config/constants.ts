@@ -3,6 +3,7 @@ export const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
 
 export const ROUTES = {
   HOME: '/',
+  NETWORK: '/network',
   DOCKER: '/docker',
   COMPOSE: '/compose',
   KUBERNETES: '/kubernetes',

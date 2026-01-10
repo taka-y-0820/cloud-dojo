@@ -17,11 +17,15 @@ import {
   Target,
   RefreshCw,
   GitBranch,
+  NotebookPen,
 } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { API_BASE_URL, WS_URL } from '@/config/constants';
 import { PageLayout } from '@/layouts/PageLayout';
 import { PageHeader } from '@/layouts/PageHeader';
+import { Tabs } from '@/components/ui/tabs/Tabs';
+import { TabItem } from '@/components/ui/tabs/types';
+import { NoteEditor } from '@/components/ui/notes/NoteEditor';
 
 interface WorkflowRun {
   id: string;
@@ -66,8 +70,10 @@ interface Template {
   language: string;
 }
 
+type CICDTab = 'learn' | 'create' | 'run' | 'history' | 'memo';
+
 export function CICDPipeline() {
-  const [activeTab, setActiveTab] = useState<'learn' | 'create' | 'run' | 'history'>('learn');
+  const [activeTab, setActiveTab] = useState<CICDTab>('learn');
   const [yaml, setYaml] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
@@ -235,6 +241,34 @@ export function CICDPipeline() {
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${seconds}s`;
   };
 
+  const tabs: TabItem<CICDTab>[] = [
+    {
+      key: 'learn',
+      label: '学習',
+      icon: BookOpen,
+    },
+    {
+      key: 'create',
+      label: 'ワークフロー作成',
+      icon: Code,
+    },
+    {
+      key: 'run',
+      label: '実行中',
+      icon: Play,
+    },
+    {
+      key: 'history',
+      label: '実行履歴',
+      icon: History,
+    },
+    {
+      key: 'memo',
+      label: 'メモ',
+      icon: NotebookPen,
+    },
+  ];
+
   return (
     <PageLayout>
       <PageHeader
@@ -245,44 +279,7 @@ export function CICDPipeline() {
       />
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border">
-        {(['learn', 'create', 'run', 'history'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-medium transition-all ${
-              activeTab === tab
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab === 'learn' && (
-              <>
-                <BookOpen className="w-4 h-4 inline mr-2" />
-                学習
-              </>
-            )}
-            {tab === 'create' && (
-              <>
-                <Code className="w-4 h-4 inline mr-2" />
-                ワークフロー作成
-              </>
-            )}
-            {tab === 'run' && (
-              <>
-                <Play className="w-4 h-4 inline mr-2" />
-                実行中
-              </>
-            )}
-            {tab === 'history' && (
-              <>
-                <History className="w-4 h-4 inline mr-2" />
-                実行履歴
-              </>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       <div className="flex-1 overflow-auto rounded-b-lg bg-card border-x border-b">
         {activeTab === 'learn' && (
@@ -1034,6 +1031,8 @@ jobs:
           </div>
         )}
       </div>
+
+      {activeTab === 'memo' && <NoteEditor pageId="cicd-pipeline" pageTitle="CI/CD Pipeline" />}
     </PageLayout>
   );
 }

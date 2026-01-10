@@ -1,10 +1,11 @@
-type Props = {
+type TabButtonProps = {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
 };
 
-export const TabButton = ({ active, onClick, children }: Props) => {
+export const TabButton = ({ active, onClick, icon: Icon, children }: TabButtonProps) => {
   return (
     <button
       onClick={onClick}
@@ -14,6 +15,7 @@ export const TabButton = ({ active, onClick, children }: Props) => {
           : 'text-muted-foreground hover:text-foreground'
       }`}
     >
+      {Icon && <Icon className="w-4 h-4 inline mr-2" />}
       {children}
     </button>
   );
