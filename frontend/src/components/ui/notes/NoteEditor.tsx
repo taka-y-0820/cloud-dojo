@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Save,
   Download,
@@ -41,7 +41,7 @@ interface CodeProps {
 }
 
 export function NoteEditor({ pageId, pageTitle }: NoteEditorProps) {
-  const [note, setNote] = useState<Note>({
+  const [note, setNote] = useState<Note>(() => ({
     id: crypto.randomUUID(),
     pageId,
     title: `${pageTitle}のメモ`,
@@ -49,31 +49,22 @@ export function NoteEditor({ pageId, pageTitle }: NoteEditorProps) {
     format: 'markdown',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  });
+  }));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSave, setAutoSave] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const adjustTextareaHeight = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    const maxHeight = 800; // 必要に応じて調整
-    el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
-  }, []);
-
-  // ロード
   useEffect(() => {
     const loadNote = async () => {
       const saved = await notesService.load(pageId);
       if (saved) {
         setNote(saved);
         setLastSaved(new Date(saved.updatedAt));
-        setTimeout(() => adjustTextareaHeight(), 0);
       }
     };
+
     loadNote();
   }, [pageId]);
 
@@ -81,31 +72,37 @@ export function NoteEditor({ pageId, pageTitle }: NoteEditorProps) {
   useEffect(() => {
     if (!autoSave || !isDirty) return;
 
-    const timer = setTimeout(() => {
-      saveNote({ viaAuto: true });
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [note.content, autoSave, isDirty]);
-
-  const saveNote = useCallback(
-    async (opts?: { viaAuto?: boolean }) => {
-      // 自動保存からの呼び出しで内容が空文字のみなら保存しない
-      if (opts?.viaAuto && note.content.trim() === '') {
-        return;
-      }
+    const timer = setTimeout(async () => {
+      if (note.content.trim() === '') return;
 
       const updatedNote = {
         ...note,
+        content: note.content,
         updatedAt: new Date().toISOString(),
       };
       await notesService.save(pageId, updatedNote);
-      setNote(updatedNote);
       setLastSaved(new Date());
       setIsDirty(false);
-    },
-    [note, pageId]
-  );
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [autoSave, isDirty, pageId]);
+
+  const saveNote = async (opts?: { viaAuto?: boolean }) => {
+    // 自動保存からの呼び出しで内容が空文字のみなら保存しない
+    if (opts?.viaAuto && note.content.trim() === '') {
+      return;
+    }
+
+    const updatedNote = {
+      ...note,
+      updatedAt: new Date().toISOString(),
+    };
+    await notesService.save(pageId, updatedNote);
+    setNote(updatedNote);
+    setLastSaved(new Date());
+    setIsDirty(false);
+  };
 
   const handleContentChange = (content: string) => {
     setNote((prev) => ({ ...prev, content }));
@@ -436,7 +433,6 @@ export function NoteEditor({ pageId, pageTitle }: NoteEditorProps) {
             ref={textareaRef}
             value={note.content}
             onChange={(e) => handleContentChange(e.target.value)}
-            onInput={adjustTextareaHeight}
             placeholder={`# ${pageTitle}の学習メモ
 
 ## 学んだこと
@@ -449,8 +445,7 @@ command here
 
 ## メモ
 `}
-            style={{ height: 'auto' }}
-            className="w-full h-full resize-none p-6 bg-background border-0 focus:outline-none font-mono text-sm"
+            className="w-full h-[550px] p-6 bg-background border-0 focus:outline-none font-mono text-sm resize-none overflow-y-auto"
           />
         )}
       </div>

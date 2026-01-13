@@ -31,6 +31,7 @@ await fastify.register(cors, {
     'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:3003',
+    'http://localhost:4173',
     'null',
   ],
   credentials: true,
