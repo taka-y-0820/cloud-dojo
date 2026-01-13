@@ -3,7 +3,6 @@ package api
 import (
 	"cloud-dojo-worker/internal/docker"
 	"cloud-dojo-worker/internal/k8s"
-	"cloud-dojo-worker/internal/network"
 
 	"github.com/gofiber/fiber/v2"
 )
